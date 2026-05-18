@@ -37,7 +37,6 @@ export async function DELETE(request, { params }) {
     if (!booking)
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
-    // Only admin or the booking owner can cancel
     if (user.role !== "admin" && booking.user.toString() !== user.id)
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
 
