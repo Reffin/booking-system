@@ -17,6 +17,7 @@ export default function Dashboard() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [takenSlots, setTakenSlots] = useState([]);
 
   const TIME_SLOTS = [
     "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
@@ -54,6 +55,23 @@ export default function Dashboard() {
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
+
+  useEffect(() => {
+  if (!selectedService || !bookingForm.date) {
+    setTakenSlots([]);
+    return;
+  }
+  fetch(`/api/bookings/slots?serviceId=${selectedService._id}&date=${bookingForm.date}`)
+    .then(res => res.json())
+    .then(data => {
+      if (Array.isArray(data)) {
+        setTakenSlots(data);
+        // If the chosen time just became unavailable, clear it
+        setBookingForm(prev => data.includes(prev.time) ? { ...prev, time: "" } : prev);
+      }
+    })
+    .catch(console.error);
+}, [selectedService, bookingForm.date]);
 
   const handleBook = async (e) => {
     e.preventDefault();
@@ -216,17 +234,23 @@ export default function Dashboard() {
                   <div>
                     <label className="text-sm font-semibold text-gray-700 mb-1 block">Time Slot</label>
                     <div className="grid grid-cols-4 gap-2">
-                      {TIME_SLOTS.map(slot => (
-                        <button key={slot} type="button"
-                          onClick={() => setBookingForm({...bookingForm, time: slot})}
-                          className={`py-2 rounded-xl text-xs font-semibold transition-all ${
-                            bookingForm.time === slot
-                              ? "bg-blue-600 text-white"
-                              : "bg-gray-100 text-gray-600 hover:bg-blue-100"
-                          }`}>
-                          {slot}
-                        </button>
-                      ))}
+                    {TIME_SLOTS.map(slot => {
+  const taken = takenSlots.includes(slot);
+  return (
+    <button key={slot} type="button"
+      disabled={taken}
+      onClick={() => setBookingForm({...bookingForm, time: slot})}
+      className={`py-2 rounded-xl text-xs font-semibold transition-all ${
+        taken
+          ? "bg-gray-100 text-gray-300 line-through cursor-not-allowed"
+          : bookingForm.time === slot
+          ? "bg-blue-600 text-white"
+          : "bg-gray-100 text-gray-600 hover:bg-blue-100"
+      }`}>
+      {slot}
+    </button>
+  );
+})}
                     </div>
                   </div>
 
@@ -237,7 +261,7 @@ export default function Dashboard() {
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" />
                   </div>
 
-                  <button type="submit" disabled={bookingLoading || !selectedService}
+                  <button type="submit" disabled={bookingLoading || !selectedService || !bookingForm.time}
                     className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors">
                     {bookingLoading ? "Booking..." : "Confirm Booking →"}
                   </button>
