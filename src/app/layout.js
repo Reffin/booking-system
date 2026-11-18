@@ -8,6 +8,11 @@ export const metadata = {
   description: "Easy online appointment booking",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
