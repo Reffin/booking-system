@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Booking from "@/models/Booking";
+import Service from "@/models/Service";
 import { verifyToken } from "@/lib/auth";
 
 export async function PATCH(request, { params }) {
@@ -17,10 +18,10 @@ export async function PATCH(request, { params }) {
       id,
       { status },
       { returnDocument: "after" }
-    ).populate("service", "name price duration");
+    ).populate({ path: "service", model: Service, select: "name price duration" });
 
     if (!booking)
-      return NextResponse.json({ error: `Booking not found (v2, id: ${id})` }, { status: 404 });
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
     return NextResponse.json(booking);
   } catch (err) {
@@ -39,7 +40,7 @@ export async function DELETE(request, { params }) {
 
     const booking = await Booking.findById(id);
     if (!booking)
-      return NextResponse.json({ error: `Booking not found (v2, id: ${id})` }, { status: 404 });
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
     if (user.role !== "admin" && booking.user.toString() !== user.id)
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
